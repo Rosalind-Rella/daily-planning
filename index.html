@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#153a43" />
+    <title>Study Desk</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell is-today-mode">
+      <header class="topbar">
+        <div class="brand-block">
+          <p class="eyebrow">Study Desk</p>
+          <h1>Study Desk</h1>
+          <p id="today-label" class="brand-copy"></p>
+        </div>
+        <div class="topbar-actions">
+            <div class="view-switch" role="tablist" aria-label="视图切换">
+              <button id="today-tab" class="switch-btn is-active" type="button">今日画布</button>
+              <button id="history-tab" class="switch-btn" type="button">历史记录</button>
+              <button id="month-tab" class="switch-btn" type="button">月历模式</button>
+            </div>
+          <button id="add-task-btn" class="primary-btn" type="button">新建学习卡片</button>
+          <button id="open-summary-btn" class="ghost-btn" type="button">今日总结</button>
+          <span id="network-pill" class="network-pill">准备连接本地数据目录</span>
+        </div>
+      </header>
+
+      <main class="main-layout is-today-mode">
+        <section id="today-view" class="view is-active" aria-label="今日视图">
+          <section class="hero-panel">
+            <div>
+              <p class="eyebrow">Today</p>
+              <h2 id="hero-date"></h2>
+              <p id="today-quote" class="today-quote hidden"></p>
+              <p class="hero-copy">
+                把今天的学习任务像便签一样铺开，拖到合适的位置，边做边记录灵感、对话与延续线索。
+              </p>
+            </div>
+            <div class="hero-stats">
+              <article class="stat-card">
+                <span>活跃任务</span>
+                <strong id="active-count">0</strong>
+              </article>
+              <article class="stat-card">
+                <span>已完成</span>
+                <strong id="done-count">0</strong>
+              </article>
+              <article class="stat-card stat-card--summary">
+                <span>正式总结</span>
+                <p id="summary-preview">还没有保存今日总结，先把卡片铺起来吧。</p>
+              </article>
+            </div>
+          </section>
+
+          <section id="today-layout" class="today-layout">
+            <div class="today-layout__main">
+              <section class="canvas-surface">
+                <div class="canvas-header">
+                  <div>
+                    <p class="eyebrow">Workspace</p>
+                    <h3>自由画布</h3>
+                  </div>
+                  <p class="canvas-tip">拖动卡片头部可移动，右下角可缩放，右键可快速置顶、置底或恢复默认排序。</p>
+                </div>
+                <div id="canvas-empty" class="empty-state hidden">
+                  <h3>今天还没有任务卡片</h3>
+                  <p>先建一张学习卡片，把今天真正要推进的事情摆出来。</p>
+                  <button id="canvas-empty-action" class="primary-btn" type="button">创建第一张卡片</button>
+                </div>
+                <div id="task-canvas" class="task-canvas" aria-live="polite"></div>
+              </section>
+
+              <section class="archive-panel">
+                <button id="archive-toggle" class="archive-toggle" type="button" aria-expanded="false">
+                  已归档任务
+                  <span id="archive-count">0</span>
+                </button>
+                <div id="archive-content" class="archive-content hidden"></div>
+              </section>
+            </div>
+
+            <aside id="time-block-panel" class="time-block-panel">
+              <div class="time-block-panel__header">
+                <div>
+                  <p class="eyebrow">Today Plan</p>
+                  <h3>今日时间安排卡</h3>
+                </div>
+                <button id="time-block-toggle" class="ghost-btn" type="button" aria-expanded="true">收起</button>
+              </div>
+              <div id="time-block-body" class="time-block-panel__body">
+                <p class="helper-copy">
+                  这里安排今天上午 / 下午 / 晚上要推进什么。它是轻量执行节奏，不是日历或精确分钟表。
+                </p>
+                <div id="time-block-slots" class="time-block-slots"></div>
+                <p id="time-block-unassigned" class="helper-copy"></p>
+              </div>
+            </aside>
+          </section>
+        </section>
+
+        <section id="history-view" class="view" aria-label="历史视图">
+          <section class="history-panel">
+            <div class="history-header">
+              <div>
+                <p class="eyebrow">History</p>
+                <h2>历史记录</h2>
+              </div>
+              <div class="history-actions">
+                <label>
+                  <span>日期</span>
+                  <input id="history-date" type="date" />
+                </label>
+                <button id="refresh-history-btn" class="ghost-btn" type="button">刷新</button>
+              </div>
+            </div>
+
+            <article class="history-summary-card">
+              <h3>保存的总结</h3>
+              <p id="history-summary-text">这一天还没有保存总结。</p>
+            </article>
+
+            <div id="history-empty" class="empty-state hidden">
+              <h3>这一天还没有记录</h3>
+              <p>可以换一个日期，或者回到今天继续铺卡片。</p>
+            </div>
+
+            <div id="history-task-list" class="history-task-list"></div>
+          </section>
+        </section>
+
+        <section id="month-view" class="view" aria-label="月历视图">
+          <section class="month-layout">
+            <article class="month-panel">
+              <div class="month-header">
+                <div>
+                  <p class="eyebrow">Month</p>
+                  <h2>月历模式</h2>
+                </div>
+                <div class="month-actions">
+                  <button id="prev-month-btn" class="ghost-btn" type="button">上个月</button>
+                  <strong id="month-label" class="month-label"></strong>
+                  <button id="next-month-btn" class="ghost-btn" type="button">下个月</button>
+                </div>
+              </div>
+              <p class="month-copy">
+                从整月视角看安排过来的任务、重点任务和完成情况。每个日期先显示两条，超出的内容用 <code>+n</code> 轻量提示。
+              </p>
+              <div id="month-grid" class="month-grid" aria-live="polite"></div>
+            </article>
+
+            <aside class="month-day-panel">
+              <div class="month-day-panel__header">
+                <p class="eyebrow">Day Panel</p>
+                <h3 id="month-day-title">选择一个日期</h3>
+                <p id="month-day-summary" class="helper-copy">点击月历中的某一天，查看该天的历史记录概览。</p>
+              </div>
+              <div id="month-day-empty" class="empty-state">
+                <h3>还没有选中日期</h3>
+                <p>先点一个日期格子，再决定要打开哪张任务卡。</p>
+              </div>
+              <div id="month-day-task-list" class="month-day-task-list"></div>
+            </aside>
+          </section>
+        </section>
+      </main>
+
+      <aside id="detail-drawer" class="detail-drawer" aria-hidden="true">
+        <div id="drawer-empty" class="drawer-empty">
+          <p class="eyebrow">任务抽屉</p>
+          <h2>点开一张卡片</h2>
+          <p>在这里编辑标题、状态、重要与紧急程度、灵感和任务延续区。</p>
+        </div>
+
+        <div id="drawer-content" class="drawer-content hidden">
+          <div class="drawer-topbar">
+            <div>
+              <p class="eyebrow">任务详情</p>
+              <h2 id="drawer-heading">任务详情</h2>
+            </div>
+            <button id="close-drawer-btn" class="icon-btn" type="button" aria-label="关闭抽屉">×</button>
+          </div>
+          <div id="drawer-scroll" class="drawer-scroll">
+            <div class="field-group">
+              <label for="task-title-input">任务标题</label>
+              <input id="task-title-input" type="text" maxlength="120" placeholder="例如：补齐排序逻辑和复制到明天流程" />
+              <p class="helper-copy">新建卡片后会自动聚焦标题输入框；输入支持延迟保存，不会再打断中文输入法。</p>
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label for="task-status-select">状态</label>
+                <select id="task-status-select"></select>
+              </div>
+            </div>
+
+            <section class="detail-section">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">优先级</p>
+                  <h3>重要 / 紧急</h3>
+                </div>
+                <span id="ordering-mode-label" class="helper-copy"></span>
+              </div>
+              <div id="importance-slider" class="segmented-slider"></div>
+              <div id="urgency-slider" class="segmented-slider"></div>
+            </section>
+
+            <div class="field-group">
+              <label>卡片颜色</label>
+              <div id="color-picker" class="color-picker"></div>
+            </div>
+
+            <div class="drawer-actions">
+              <button id="archive-task-btn" class="ghost-btn" type="button">归档</button>
+              <button id="copy-task-btn" class="ghost-btn" type="button">安排到日期</button>
+              <button id="delete-task-btn" class="danger-btn" type="button">删除</button>
+            </div>
+
+            <section class="detail-section">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">灵感</p>
+                  <h3>Notes</h3>
+                </div>
+              </div>
+              <textarea id="note-input" rows="3" placeholder="随手记下零碎想法、关键提醒或下一步线索……"></textarea>
+              <button id="add-note-btn" class="primary-btn primary-btn--small" type="button">加入灵感</button>
+              <div id="note-list" class="stack-list"></div>
+            </section>
+
+            <section class="detail-section hidden" data-llm-only>
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">任务对话</p>
+                  <h3>LLM 交互</h3>
+                </div>
+                <span id="chat-status" class="helper-copy">等待连接</span>
+              </div>
+              <div id="chat-list" class="chat-list"></div>
+              <textarea id="chat-input" rows="4" placeholder="围绕当前任务向 LLM 提问，并把推进过程留在这里。"></textarea>
+              <button id="send-chat-btn" class="primary-btn primary-btn--small" type="button">发送给 LLM</button>
+            </section>
+
+            <section class="detail-section">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">任务延续区</p>
+                  <h3>明天接着做的线索</h3>
+                </div>
+              </div>
+              <p id="continuation-hint" class="helper-copy">这里记录这张任务卡的上次进度、相关路径、相关文件与 DDL，方便之后无缝接上。</p>
+              <div class="field-group">
+                <label for="continuation-progress-input">上次进度</label>
+                <textarea id="continuation-progress-input" rows="3" placeholder="例如：4月25日完成了复制到明天弹窗的多选交互。"></textarea>
+              </div>
+              <div class="field-group">
+                <label for="continuation-project-path-input">相关路径</label>
+                <input id="continuation-project-path-input" type="text" placeholder="例如：D:\projects\daily_planning\src" />
+              </div>
+              <div class="field-group">
+                <label for="continuation-files-input">相关文件</label>
+                <textarea id="continuation-files-input" rows="3" placeholder="例如：src/app.js&#10;src/db.js"></textarea>
+              </div>
+              <div class="field-group">
+                <label for="continuation-deadline-input">DDL</label>
+                <input id="continuation-deadline-input" type="date" />
+              </div>
+              <div class="memory-actions">
+                <button id="save-continuation-btn" class="primary-btn primary-btn--small" type="button">保存任务延续区</button>
+                <span id="continuation-status" class="helper-copy"></span>
+              </div>
+            </section>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div id="toast-region" class="toast-region" aria-live="assertive"></div>
+    <div id="month-overflow-tooltip" class="month-overflow-tooltip hidden" aria-hidden="true"></div>
+
+    <section id="summary-modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close-summary="true"></div>
+      <div class="modal-panel">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">今日总结</p>
+            <h2>今天的总结</h2>
+          </div>
+          <button id="close-summary-btn" class="icon-btn" type="button" aria-label="关闭总结">×</button>
+        </div>
+        <p class="helper-copy">总结草稿会先保存到 D 盘本地数据目录里，你可以继续编辑，再保存正式版本。</p>
+        <div class="summary-actions">
+          <button id="generate-summary-btn" class="primary-btn hidden" type="button" data-llm-only>生成 / 刷新草稿</button>
+          <button id="save-summary-btn" class="ghost-btn" type="button">保存为正式总结</button>
+        </div>
+        <p id="summary-status" class="summary-status">还没有生成草稿</p>
+        <textarea id="summary-editor" rows="16" placeholder="也可以先手写草稿，再慢慢整理成正式版本。"></textarea>
+      </div>
+    </section>
+
+    <section id="copy-modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close-copy="true"></div>
+      <div class="modal-panel modal-panel--copy">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">安排到日期</p>
+            <h2 id="copy-modal-title">安排任务到指定日期</h2>
+          </div>
+          <button id="close-copy-btn" class="icon-btn" type="button" aria-label="关闭安排到日期">×</button>
+        </div>
+        <div class="copy-modal-body">
+          <section class="copy-modal-section">
+            <h3>目标日期</h3>
+            <label class="history-date-picker" for="copy-target-date">
+              <span>选择日期</span>
+              <input id="copy-target-date" type="date" />
+            </label>
+          </section>
+          <section class="copy-modal-section">
+            <h3>勾选要带走的 Notes</h3>
+            <div id="copy-note-list" class="copy-note-list"></div>
+          </section>
+          <section class="copy-modal-section">
+            <h3>任务延续区</h3>
+            <div id="copy-continuation-field-list" class="toggle-chip-list"></div>
+            <p class="helper-copy">这里只控制“上次进度 / 相关路径 / DDL”是否继续带到目标日期。</p>
+          </section>
+          <section class="copy-modal-section hidden" data-llm-only>
+            <h3>当前 LLM 对话摘要</h3>
+            <label class="copy-note-item">
+              <input id="copy-chat-summary-checkbox" type="checkbox" />
+              <span>勾选后记录“当前 LLM 对话摘要”选项，后续阶段再接入自动摘要生成。</span>
+            </label>
+          </section>
+          <section class="copy-modal-section">
+            <h3>补充项</h3>
+            <div id="copy-mode-list" class="toggle-chip-list"></div>
+            <p class="helper-copy">当前默认保留轻量补充内容，最终会作为新的 note block 写入目标日期任务。</p>
+          </section>
+          <section class="copy-modal-section">
+            <h3>预览说明</h3>
+            <pre id="copy-preview" class="copy-preview"></pre>
+            <p id="copy-status" class="helper-copy">确认后会在目标日期创建一张新任务卡，并把选中的线索整理进去。</p>
+          </section>
+        </div>
+        <div class="summary-actions">
+          <button id="confirm-copy-btn" class="primary-btn" type="button">确认安排</button>
+          <button id="cancel-copy-btn" class="ghost-btn" type="button">取消</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="task-context-menu" class="context-menu hidden" aria-hidden="true">
+      <button type="button" data-context-action="manual-top">置顶</button>
+      <button type="button" data-context-action="manual-bottom">置底</button>
+      <button type="button" data-context-action="auto">恢复默认排序</button>
+      <button type="button" data-context-action="time-morning">加入时间片 · 上午</button>
+      <button type="button" data-context-action="time-afternoon">加入时间片 · 下午</button>
+      <button type="button" data-context-action="time-evening">加入时间片 · 晚上</button>
+    </div>
+
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>

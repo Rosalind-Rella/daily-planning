@@ -1,0 +1,16 @@
+.chrome-debug/
+.chrome-smoke/
+.chrome-smoke2/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+curl_test_payload.json
+smoke_dom.html
+
+workflow.md
+mac_productivity_app_proposal.md
+
+data/*.json
+!data/.gitkeep
